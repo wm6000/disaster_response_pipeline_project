@@ -35,7 +35,7 @@ Data includes 2 csv files:
 - Model Loading and Saving Library: Pickle
 - Web App and Data Visualization: Flask, Plotly
 
-
+<a name="running-etl-script"></a>
 ### Running ETL Script
 #### process_data.py | ETL work-flow:
 
@@ -47,6 +47,7 @@ Data includes 2 csv files:
 #### Run Command
 `python data/process_data.py  data/disaster_messages.csv data/disaster_categories.csv data/DisasterResponse.db`
 
+<a name="running-nlp-script"></a>
 ### Running NLP Script
 #### train_classifier.py | NLP work-flow:
 
@@ -60,12 +61,14 @@ Data includes 2 csv files:
 #### Run Command
 `python models/train_classifier.py data/DisasterResponse.db data/classifier.pkl`
 
+<a name="running-the-web-app"></a>
 ### Running the Web App
 #### Run Command
 `python run.py`
 
 Go to http://0.0.0.0:3001/
 
+<a name="results"></a>
 ## Results:
 ### NLP:
 
@@ -75,6 +78,7 @@ Go to http://0.0.0.0:3001/
 
 ![Intro Pic](Dashboard.png)
 
+<a name="licence"></a>
 ## License:
 This project is licensed under the MIT License - see the LICENSE file for details.
 
