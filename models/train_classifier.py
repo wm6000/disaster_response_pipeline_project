@@ -1,3 +1,16 @@
+"""
+Train Classifier
+Project: Disaster Response Pipeline
+
+Sample Script Execution:
+> python models/train_classifier.py data/DisasterResponse.db data/classifier.pkl
+
+Arguments:
+    1) Path to SQLite destination database (data/DisasterResponse.db)
+    2) Path to pickle file name where ML model is saved (data/classifier.pkl)
+"""
+
+
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
@@ -30,10 +43,11 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
+#from tokenizefunctions import StartingVerbExtractor
+#from tokenizefunctions import get_wordnet_pos
+#from tokenizefunctions import tokenize
 
 
-
-from custom_transformer import StartingVerbExtractor
 
 # Import tools needed for visualization
 from sklearn import tree
@@ -102,7 +116,100 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         X_tagged = pd.Series(X).apply(self.starting_verb)
         return pd.DataFrame(X_tagged)
     
-    
+
+def get_wordnet_pos(word):
+    """
+    Map POS tag to the first character that lemmatize() accepts.
+
+    Parameters:
+    - word (str): The word for which the POS tag needs to be mapped.
+
+    Returns:
+    - pos_tag (str): The mapped POS tag.
+
+    """
+    # Perform POS tagging on the word and extract the tag of the first word
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+
+    # Define a dictionary mapping POS tags to corresponding WordNet POS tags
+    tag_dict = {"J": wordnet.ADJ,  # Adjective
+                "N": wordnet.NOUN,  # Noun
+                "V": wordnet.VERB,  # Verb
+                "R": wordnet.ADV}  # Adverb
+
+    # Return the corresponding WordNet POS tag using the tag dictionary,
+    # defaulting to Noun if the tag is not found in the dictionary
+    return tag_dict.get(tag, wordnet.NOUN)
+
+
+def tokenize(text):
+    """
+    Tokenize and preprocess the input text.
+
+    Parameters:
+    - text (str): The text to be tokenized and preprocessed.
+
+    Returns:
+    - clean_tokens (list): The list of preprocessed tokens.
+
+    """
+    # Replace all URLs with a placeholder string 'urlplaceholder'
+    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    detected_urls = re.findall(url_regex, text)
+    for detected_url in detected_urls:
+        text = text.replace(detected_url, 'urlplaceholder')
+
+    # Remove non-alphanumeric characters and convert text to lowercase
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
+
+    # Tokenize the text into individual words
+    tokens = word_tokenize(text)
+
+    # Remove stopwords from the tokens
+    stop_words = set(stopwords.words("english"))
+    tokens = [w for w in tokens if w not in stop_words]
+
+    # Lemmatize the tokens using WordNetLemmatizer
+    lemmatizer = WordNetLemmatizer()
+    clean_tokens = []
+    for tok in tokens:
+        clean_tok = lemmatizer.lemmatize(tok, pos=get_wordnet_pos(tok)).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
+
+
+
+
+def verbtokenize(text):
+    """
+    Tokenize the input text and lemmatize the verbs.
+
+    Parameters:
+    - text (str): The text to be tokenized and lemmatized.
+
+    Returns:
+    - clean_tokens (list): The list of lemmatized tokens.
+
+    """
+    # Replace all URLs with a placeholder string 'urlplaceholder'
+    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    detected_urls = re.findall(url_regex, text)
+    for url in detected_urls:
+        text = text.replace(url, "urlplaceholder")
+
+    # Tokenize the text into individual words
+    tokens = word_tokenize(text)
+    lemmatizer = WordNetLemmatizer()
+
+    clean_tokens = []
+    for tok in tokens:
+        # Lemmatize the token to its base form (lowercase) using WordNetLemmatizer
+        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
+
 ############################################################################################################################    
 
     
@@ -126,6 +233,7 @@ def load_data(database_filepath):
     df = pd.read_sql(database_filepath, engine)
     
     # Sample first 5000 rows
+    # Allows for quicker processing while debugging
     #df = df.sample(n=5000)
     
     # Extract input features (messages)
@@ -258,100 +366,6 @@ def display_results(y_test, y_pred):
 
 ############################################################################
 
-
-def get_wordnet_pos(word):
-    """
-    Map POS tag to the first character that lemmatize() accepts.
-
-    Parameters:
-    - word (str): The word for which the POS tag needs to be mapped.
-
-    Returns:
-    - pos_tag (str): The mapped POS tag.
-
-    """
-    # Perform POS tagging on the word and extract the tag of the first word
-    tag = nltk.pos_tag([word])[0][1][0].upper()
-
-    # Define a dictionary mapping POS tags to corresponding WordNet POS tags
-    tag_dict = {"J": wordnet.ADJ,  # Adjective
-                "N": wordnet.NOUN,  # Noun
-                "V": wordnet.VERB,  # Verb
-                "R": wordnet.ADV}  # Adverb
-
-    # Return the corresponding WordNet POS tag using the tag dictionary,
-    # defaulting to Noun if the tag is not found in the dictionary
-    return tag_dict.get(tag, wordnet.NOUN)
-
-
-def tokenize(text):
-    """
-    Tokenize and preprocess the input text.
-
-    Parameters:
-    - text (str): The text to be tokenized and preprocessed.
-
-    Returns:
-    - clean_tokens (list): The list of preprocessed tokens.
-
-    """
-    # Replace all URLs with a placeholder string 'urlplaceholder'
-    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    detected_urls = re.findall(url_regex, text)
-    for detected_url in detected_urls:
-        text = text.replace(detected_url, 'urlplaceholder')
-
-    # Remove non-alphanumeric characters and convert text to lowercase
-    text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
-
-    # Tokenize the text into individual words
-    tokens = word_tokenize(text)
-
-    # Remove stopwords from the tokens
-    stop_words = set(stopwords.words("english"))
-    tokens = [w for w in tokens if w not in stop_words]
-
-    # Lemmatize the tokens using WordNetLemmatizer
-    lemmatizer = WordNetLemmatizer()
-    clean_tokens = []
-    for tok in tokens:
-        clean_tok = lemmatizer.lemmatize(tok, pos=get_wordnet_pos(tok)).lower().strip()
-        clean_tokens.append(clean_tok)
-
-    return clean_tokens
-
-
-
-
-def verbtokenize(text):
-    """
-    Tokenize the input text and lemmatize the verbs.
-
-    Parameters:
-    - text (str): The text to be tokenized and lemmatized.
-
-    Returns:
-    - clean_tokens (list): The list of lemmatized tokens.
-
-    """
-    # Replace all URLs with a placeholder string 'urlplaceholder'
-    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    detected_urls = re.findall(url_regex, text)
-    for url in detected_urls:
-        text = text.replace(url, "urlplaceholder")
-
-    # Tokenize the text into individual words
-    tokens = word_tokenize(text)
-    lemmatizer = WordNetLemmatizer()
-
-    clean_tokens = []
-    for tok in tokens:
-        # Lemmatize the token to its base form (lowercase) using WordNetLemmatizer
-        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
-        clean_tokens.append(clean_tok)
-
-    return clean_tokens
-
 ############################################################################
 
 def build_model():
@@ -384,8 +398,19 @@ def build_model():
     return pipeline
 
 def save_model(model, model_filepath):
-    pickle.dump(model, open(model_filepath, 'wb'))
+    """
+    Save the trained model to a file using pickle.
 
+    Args:
+        model (object): Trained model object to be saved.
+        model_filepath (str): Filepath to save the model.
+
+    Returns:
+        None
+    """
+    # Use pickle to dump the model object to the specified file
+    with open(model_filepath, 'wb') as file:
+        pickle.dump(model, file)
 
 ############################################################################
 
