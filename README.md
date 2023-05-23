@@ -5,16 +5,17 @@ This project aims to take data from real world disaster data from tweets and dir
 ## Table of Contents
 - [Getting Started](#getting-started)
   - [Data](#data)
-  - [Installing](#installing)
+  - [Dependencies](#dependencies)
   - [Running ETL Script](#running-etl-script)
   - [Running NLP Script](#running-nlp-script)
   - [Running the Web App](#running-the-web-app)
 - [Results](#results)
 - [License](#license)
 
-
+<a name="getting_started"></a>
 ## Getting Started
 
+<a name="data"></a>
 ### Data
 
 This dataset contains nearly 30,000 messages drawn from events including an earthquake in Haiti in 2010, an earthquake in Chile in 2010, floods in Pakistan in 2010, super-storm Sandy in the U.S.A. in 2012, and news articles spanning a large number of years and 100s of different disasters.
@@ -25,37 +26,14 @@ Data includes 2 csv files:
 - `disaster_messages.csv`: Messages data.
 - `disaster_categories.csv`: Disaster categories of messages.
 
-
-### Installing
-
-Clone this GitHub repository
-
-Python 3+
-
-Flask==2.3.2
-
-Jinja2==3.1.2
-
-joblib==1.2.0
-
-nltk==3.8.1
-
-numpy==1.24.3
-
-pandas==2.0.1
-
-plotly==5.14.1
-
-regex==2023.5.5
-
-requests==2.30.0
-
-scikit-learn==1.2.2
-
-sklearn==0.0.post5
-
-SQLAlchemy==2.0.13
-
+<a name="dependencies"></a>
+### Dependencies
+- Python 3.5+
+- Machine Learning Libraries: NumPy, Pandas, Sciki-Learn
+- Natural Language Process Libraries: NLTK
+- SQLlite Database Libraqries: SQLalchemy
+- Model Loading and Saving Library: Pickle
+- Web App and Data Visualization: Flask, Plotly
 
 
 ### Running ETL Script
