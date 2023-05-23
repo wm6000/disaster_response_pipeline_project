@@ -1,38 +1,91 @@
 # Disaster Response Pipline
 
-This project aims to [provide a brief description of the project's purpose or goals].
+This project aims to take data from real world disaster data from tweets and direct messages and build a natural language processing tool that categorizes messages so the information gets to the right response organization or team.
 
 ## Table of Contents
-- [Project Summary](#project-summary)
 - [Getting Started](#getting-started)
-  - [Dependencies](#dependencies)
+  - [Data](#data)
   - [Installing](#installing)
   - [Running the Scripts](#running-the-scripts)
   - [Running the Web App](#running-the-web-app)
 - [Files in the Repository](#files-in-the-repository)
 - [License](#license)
 
-## Project Summary
-
-[Provide a brief overview or summary of the project. Explain what it does and its significance or value.]
 
 ## Getting Started
 
-### Dependencies
+### Data
 
-[Specify the dependencies required to run the project, including any specific versions if necessary. Provide instructions on how to install them.]
+This dataset contains nearly 30,000 messages drawn from events including an earthquake in Haiti in 2010, an earthquake in Chile in 2010, floods in Pakistan in 2010, super-storm Sandy in the U.S.A. in 2012, and news articles spanning a large number of years and 100s of different disasters.
+
+The data has been encoded with 36 different categories related to disaster response and has been stripped of messages with sensitive information in their entirety.
+
+Data includes 2 csv files:
+- `disaster_messages.csv`: Messages data.
+- `disaster_categories.csv`: Disaster categories of messages.
+
 
 ### Installing
 
-[Provide step-by-step instructions on how to install the project or any additional libraries or packages required.]
+Clone this GitHub repository
 
-### Running the Scripts
+Python 3+
 
-[Explain how to run the Python scripts included in the repository. Include any necessary command-line arguments or configurations.]
+Flask==2.3.2
+
+Jinja2==3.1.2
+
+joblib==1.2.0
+
+nltk==3.8.1
+
+numpy==1.24.3
+
+pandas==2.0.1
+
+plotly==5.14.1
+
+regex==2023.5.5
+
+requests==2.30.0
+
+scikit-learn==1.2.2
+
+sklearn==0.0.post5
+
+SQLAlchemy==2.0.13
+
+
+
+### Running ETL Script
+#### process_data.py | ETL work-flow:
+
+- Loads the messages and categories datasets
+- Merges the two datasets
+- Cleans the data
+- Stores it in a SQLite database
+
+#### Run Command
+`python data/process_data.py  data/disaster_messages.csv data/disaster_categories.csv data/DisasterResponse.db`
+
+### Running NLP Script
+#### train_classifier.py | NLP work-flow:
+
+- Loads data from the SQLite database
+- Splits the dataset into training and test sets
+- Builds a text processing and machine learning pipeline
+- Trains and tunes a model using GridSearchCV
+- Outputs results on the test set
+- Exports the final model as a pickle file
+
+#### Run Command
+`python models/train_classifier.py data/DisasterResponse.db data/classifier.pkl`
 
 ### Running the Web App
+#### Run Command
+`python run.py`
 
-[Provide instructions on how to run the web app, if applicable. Include any setup or configuration steps required.]
+Go to http://0.0.0.0:3001/
 
 ## Files in the Repository
 
