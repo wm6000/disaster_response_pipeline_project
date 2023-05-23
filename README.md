@@ -6,9 +6,10 @@ This project aims to take data from real world disaster data from tweets and dir
 - [Getting Started](#getting-started)
   - [Data](#data)
   - [Installing](#installing)
-  - [Running the Scripts](#running-the-scripts)
+  - [Running ETL Script](#running-etl-script)
+  - [Running NLP Script](#running-nlp-script)
   - [Running the Web App](#running-the-web-app)
-- [Files in the Repository](#files-in-the-repository)
+- [Results](#results)
 - [License](#license)
 
 
@@ -90,8 +91,11 @@ Go to http://0.0.0.0:3001/
 ## Results:
 ### NLP:
 
+![Intro Pic](Results.png)
+
 ### Website:
 
+![Intro Pic](Dashboard.png)
 
 ## License:
 This project is licensed under the MIT License - see the LICENSE file for details.
