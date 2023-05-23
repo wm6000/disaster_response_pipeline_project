@@ -4,34 +4,33 @@ import pandas as pd
 
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.wordnet import WordNetLemmatizer
-
 from nltk.tokenize import word_tokenize
-
-from flask import Flask
-from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
-#from sklearn.externals import joblib
-import joblib
-from sqlalchemy import create_engine
-
-from sklearn.base import BaseEstimator, TransformerMixin
-
-
-import pandas as pd
-from sqlalchemy import create_engine
-import numpy as np
-import re
-
-
 
 import nltk
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
-stop = stopwords.words('english')
+
 from nltk.tokenize import word_tokenize
 from nltk.stem.wordnet import WordNetLemmatizer
 
+from flask import Flask
+from flask import render_template, request, jsonify
+from plotly.graph_objs import Bar
+import joblib
+from sqlalchemy import create_engine
+
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
+
+import pandas as pd
+from sqlalchemy import create_engine
+import re
+
+
+
+
+
+
 
 
 
@@ -48,7 +47,7 @@ import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
-
+stop = stopwords.words('english')
 
 app = Flask(__name__)
 
