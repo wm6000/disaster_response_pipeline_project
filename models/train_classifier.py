@@ -28,31 +28,16 @@ from nltk.stem.wordnet import WordNetLemmatizer
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import AdaBoostClassifier
+
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score
+
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.linear_model import LogisticRegression
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.svm import LinearSVC
-from sklearn.tree import DecisionTreeClassifier
-
-#from tokenizefunctions import StartingVerbExtractor
-#from tokenizefunctions import get_wordnet_pos
-#from tokenizefunctions import tokenize
-
-
-
-# Import tools needed for visualization
-from sklearn import tree
-import pydot
-import matplotlib.pyplot as plt
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from rake_nltk import Rake
@@ -362,12 +347,6 @@ def display_results(y_test, y_pred):
 
 
 
-
-
-############################################################################
-
-############################################################################
-
 def build_model():
     """
     Build a machine learning model pipeline.
@@ -384,18 +363,20 @@ def build_model():
             ])),
             ('starting_verb', StartingVerbExtractor())
         ])),
-        ('clf', MultiOutputClassifier(AdaBoostClassifier(n_estimators=50)))
+        ('clf', MultiOutputClassifier(AdaBoostClassifier()))
     ])
 
-    #parameters = {
-    #    'clf__estimator__n_estimators': [50, 100, 200]
-    #}
+    parameters = {
+        'clf__estimator__n_estimators': [50, 100, 200],
+        'features__text_pipeline__vect__ngram_range': [(1, 1), (1, 2), (1, 3)],
+        'clf__estimator__learning_rate': [0.1, 0.5, 1.0]
+    }
     
     # Perform grid search to find the best model parameters
-    #cv = GridSearchCV(pipeline, param_grid=parameters)
+    cv = GridSearchCV(pipeline, param_grid=parameters)
 
-    #return cv
-    return pipeline
+    return cv
+    #return pipeline
 
 def save_model(model, model_filepath):
     """
@@ -416,21 +397,24 @@ def save_model(model, model_filepath):
 
 def main():
     
-        """
-        Train Classifier Main function
+    """Train Classifier Main function
     
         This function applies the Machine Learning Pipeline:
         1) Extract data from SQLite db
         2) Train ML model on training set
         3) Estimate model performance on test set
-        4) Save trained model as Pickle
-        """
+        4) Save trained model as Pickle"""
+       
     
-    #if len(sys.argv) == 3:
-        database_filepath = 'data/DisasterResponse.db' 
-        model_filepath = 'models/classifier.pkl'
-        #database_filepath, model_filepath = sys.argv[1:]
+    if len(sys.argv) == 3:
+        
+        #progrmatically pass filepaths if desired
+        #database_filepath = 'data/DisasterResponse.db' 
+        #model_filepath = 'models/classifier.pkl'
+        
+        database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
+        
         # Load data from the specified database file
         X, Y, category_names = load_data(database_filepath)
 
@@ -445,24 +429,6 @@ def main():
         # Train the model using the training data
         model.fit(X_train, Y_train)
 
-
-        # Get the best parameters
-        #best_params = model.best_params_
-
-        # Print the best parameters
-        #print("Best parameters:")
-        #for param, value in best_params.items():
-        #    print(f"{param}: {value}")
-
-        ##########################################################
-
-        #clf = model.named_steps['clf'].estimators_[0].estimator_
-        
-        #plt.figure(figsize=(15,10))
-        #tree.plot_tree(clf,filled=True)
-        #plt.show()
-        ##########################################################
-
         print('Evaluating model...')
         # Evaluate the trained model on the test set
         evaluate_model(model, X_test, Y_test, category_names)
@@ -472,12 +438,11 @@ def main():
         save_model(model, model_filepath)
 
         print('Trained model saved.')
-
-    #else:
-    #    print('Please provide the filepath of the disaster messages database '\
-    #          'as the first argument and the filepath of the pickle file to '\
-    #          'save the model to as the second argument. \n\nExample: python '\
-    #          'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
+    else:
+        print('Please provide the filepath of the disaster messages database '\
+              'as the first argument and the filepath of the pickle file to '\
+              'save the model to as the second argument. \n\nExample: python '\
+              'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
 
 
 if __name__ == '__main__':
