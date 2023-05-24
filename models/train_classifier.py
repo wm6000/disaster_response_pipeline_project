@@ -276,6 +276,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
     ave_positive_accuracy1 /= len(category_names)
     ave_negative_accuracy1 /= len(category_names)
 
+
     print('###############################################################################################')
     # Print average accuracy metrics
     print("Average Accuracy:", ave_accuracy1)
