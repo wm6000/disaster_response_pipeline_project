@@ -10,7 +10,6 @@ Arguments:
     2) Path to pickle file name where ML model is saved (data/classifier.pkl)
 """
 
-
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
@@ -40,7 +39,6 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from sklearn.base import BaseEstimator, TransformerMixin
-from rake_nltk import Rake
 
 ############################################################################################################################
 

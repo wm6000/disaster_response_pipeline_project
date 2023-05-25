@@ -1,50 +1,40 @@
+"""
+Run Website
+Project: Disaster Response Pipeline
+
+Sample Script Execution:
+> python app/run.py
+
+Arguments:
+    1) Path to SQLite destination database (data/DisasterResponse.db)
+    2) Path to pickle file name where ML model is saved (data/classifier.pkl)
+
+"""
+
+
 import json
 import plotly
 import pandas as pd
 
+import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
-
-import nltk
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
-
 from nltk.tokenize import word_tokenize
 from nltk.stem.wordnet import WordNetLemmatizer
 
 from flask import Flask
-from flask import render_template, request, jsonify
+from flask import render_template, request
 from plotly.graph_objs import Bar
 import joblib
 from sqlalchemy import create_engine
 
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.base import BaseEstimator, TransformerMixin
 
 import pandas as pd
-from sqlalchemy import create_engine
 import re
-
-
-
-
-
-
-
-
-
-import sys
-
-
-
-
-# Import tools needed for visualization
-from sklearn import tree
-
-import matplotlib.pyplot as plt
-
-from sklearn.base import BaseEstimator, TransformerMixin
 
 
 stop = stopwords.words('english')
@@ -173,7 +163,6 @@ def tokenize(text):
 
 
 
-
 def verbtokenize(text):
     """
     Tokenize the input text and lemmatize the verbs.
@@ -222,16 +211,12 @@ model = joblib.load('models/classifier.pkl')
 def index():
     
 
-
     # extract data needed for visuals
     category_names = df.iloc[:,4:].columns
     category_totals = (df.iloc[:,4:] != 0).sum().values
     
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
-    
-    
 
     graphs  = [
             # GRAPH 1 - genre graph

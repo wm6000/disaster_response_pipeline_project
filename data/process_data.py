@@ -1,3 +1,16 @@
+"""
+Process Data
+Project: Disaster Response Pipeline
+
+Sample Script Execution:
+> python data/process_data.py data/disaster_messages.csv data/disaster_categories.csv data/DisasterResponse.db
+
+Arguments:
+    1) Path disaster messages csv (data/disaster_messages.csv)
+    2) Path to disaster categories csv (data/categories.csv)
+    3) Path to SQLite destination database (data/DisasterResponse.db)
+"""
+
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
