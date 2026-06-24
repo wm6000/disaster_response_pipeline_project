@@ -1,6 +1,6 @@
 # Disaster Response Pipline
 
-This project aims to take data from real world disaster data from tweets and direct messages and build a natural language processing tool that categorizes messages so the information gets to the right response organization or team.
+This project aims to take data from real world disasters from tweets and direct messages and build a natural language processing tool that categorizes messages so the information gets to the right response organization or team.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
