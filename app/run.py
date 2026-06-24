@@ -201,7 +201,6 @@ engine = create_engine('sqlite:///' + 'data/DisasterResponse.db')
 
 # Load the table into a Pandas DataFrame
 df = pd.read_sql('data/DisasterResponse.db', engine)
-
 # load model
 model = joblib.load('models/classifier.pkl')
 

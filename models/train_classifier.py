@@ -40,8 +40,10 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 from sklearn.base import BaseEstimator, TransformerMixin
 
-############################################################################################################################
+from tokenizer import tokenize, StartingVerbExtractor
 
+############################################################################################################################
+'''
 class StartingVerbExtractor(BaseEstimator, TransformerMixin):
     """
     Custom transformer class that extracts features indicating if a sentence starts with a verb.
@@ -192,7 +194,7 @@ def verbtokenize(text):
         clean_tokens.append(clean_tok)
 
     return clean_tokens
-
+'''
 ############################################################################################################################    
 
     
@@ -353,7 +355,7 @@ def build_model():
     Returns:
     - cv (GridSearchCV): Grid search object for model training and tuning.
 
-    """
+    
     pipeline = Pipeline([
         ('features', FeatureUnion([
             ('text_pipeline', Pipeline([
@@ -373,8 +375,21 @@ def build_model():
     
     # Perform grid search to find the best model parameters
     cv = GridSearchCV(pipeline, param_grid=parameters)
+    """
 
-    return cv
+    pipeline = Pipeline([
+        ('features', FeatureUnion([
+            ('text_pipeline', Pipeline([
+                ('vect', CountVectorizer(tokenizer=tokenize, ngram_range=(1, 1))),
+                ('tfidf', TfidfTransformer())
+            ])),
+            ('starting_verb', StartingVerbExtractor())
+        ])),
+        ('clf', MultiOutputClassifier(AdaBoostClassifier(n_estimators=50, learning_rate=1.0)))
+    ])
+
+
+    return pipeline
     #return pipeline
 
 def save_model(model, model_filepath):
