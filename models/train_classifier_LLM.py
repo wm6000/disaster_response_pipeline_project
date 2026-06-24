@@ -3,36 +3,39 @@ Train Classifier
 Project: Disaster Response Pipeline
 
 Sample Script Execution:
-> python models/train_classifier.py data/DisasterResponse.db data/classifier.pkl
+> python models/train_classifier_LLM.py data/DisasterResponse.db
 
 Arguments:
     1) Path to SQLite destination database (data/DisasterResponse.db)
-    2) Path to pickle file name where ML model is saved (data/classifier.pkl)
 """
 
+import json
+import os
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
 import numpy as np
 import re
 
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
-import pickle
-'''
 import nltk
+
+'''
+
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
 stop = stopwords.words('english')
 from nltk.tokenize import word_tokenize
 from nltk.stem.wordnet import WordNetLemmatizer
-'''
-from sklearn.model_selection import train_test_split
+
+
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.ensemble import AdaBoostClassifier
 
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import Pipeline
 
 from sklearn.pipeline import Pipeline, FeatureUnion
@@ -42,6 +45,12 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from tokenizer import tokenize, StartingVerbExtractor
+'''
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 ############################################################################################################################
 '''
@@ -347,66 +356,119 @@ def display_results(y_test, y_pred):
     # Return the computed performance metrics
     return accuracy, positive_accuracy, negative_accuracy
 
-
-
-def build_model():
+class OpenAIDisasterClassifier:
     """
-    Build a machine learning model pipeline.
-
-    Returns:
-    - cv (GridSearchCV): Grid search object for model training and tuning.
-
-    
-    pipeline = Pipeline([
-        ('features', FeatureUnion([
-            ('text_pipeline', Pipeline([
-                ('vect', CountVectorizer(tokenizer=tokenize)),
-                ('tfidf', TfidfTransformer())
-            ])),
-            ('starting_verb', StartingVerbExtractor())
-        ])),
-        ('clf', MultiOutputClassifier(AdaBoostClassifier()))
-    ])
-
-    parameters = {
-        'clf__estimator__n_estimators': [50, 100, 200],
-        'features__text_pipeline__vect__ngram_range': [(1, 1), (1, 2), (1, 3)],
-        'clf__estimator__learning_rate': [0.1, 0.5, 1.0]
-    }
-    
-    # Perform grid search to find the best model parameters
-    cv = GridSearchCV(pipeline, param_grid=parameters)
+    OpenAI-backed classifier with a sklearn-like fit/predict interface.
     """
 
-    pipeline = Pipeline([
-        ('features', FeatureUnion([
-            ('text_pipeline', Pipeline([
-                ('vect', CountVectorizer(tokenizer=tokenize, ngram_range=(1, 1))),
-                ('tfidf', TfidfTransformer())
-            ])),
-            ('starting_verb', StartingVerbExtractor())
-        ])),
-        ('clf', MultiOutputClassifier(AdaBoostClassifier(n_estimators=50, learning_rate=1.0)))
-    ])
+    def __init__(self, category_names, model=None, batch_size=10):
+        if OpenAI is None:
+            raise ImportError(
+                "The openai package is required. Install it with: pip install openai"
+            )
+
+        self.category_names = list(category_names)
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        self.batch_size = int(os.getenv("OPENAI_BATCH_SIZE", batch_size))
+
+        if not os.getenv("OPENAI_API_KEY"):
+            raise ValueError(
+                "OPENAI_API_KEY is not set. Set it before running this script."
+            )
+
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    def fit(self, X, y=None):
+        """
+        Keep the same call pattern as sklearn models. The OpenAI model is not
+        trained locally, but category names can be refreshed from y.
+        """
+        if y is not None and hasattr(y, "columns"):
+            self.category_names = list(y.columns)
+        return self
+
+    def predict(self, X):
+        """
+        Predict one binary label per disaster category for every message in X.
+        """
+        messages = list(X)
+        predictions = []
+
+        for start in range(0, len(messages), self.batch_size):
+            batch = messages[start:start + self.batch_size]
+            print(
+                "Classifying messages {}-{} of {} with OpenAI...".format(
+                    start + 1, start + len(batch), len(messages)
+                )
+            )
+            predictions.extend(self._predict_batch(batch))
+
+        return np.array(predictions, dtype=int)
+
+    def _predict_batch(self, messages):
+        category_list = ", ".join(self.category_names)
+        numbered_messages = [
+            {"id": index, "message": message}
+            for index, message in enumerate(messages)
+        ]
+
+        system_prompt = (
+            "You classify disaster-response messages. These messages come from real-world "
+            "disasters, including tweets, direct messages, and news articles from events "
+            "such as the 2010 Haiti earthquake, 2010 Chile earthquake, 2010 Pakistan floods, "
+            "and 2012 super-storm Sandy. "
+            "For each message, return a binary 0 or 1 label for every category so the "
+            "information can be routed to the right response organization or team. "
+            "Use 1 only when the message clearly belongs to that category. "
+            "Return valid JSON only."
+        )
+        user_prompt = (
+            "Categories: {categories}\n\n"
+            "Messages:\n{messages}\n\n"
+            "Return exactly this JSON shape:\n"
+            '{{"predictions":[{{"id":0,"labels":{{"category_name":0}}}}]}}\n'
+            "Each labels object must include every category exactly once."
+        ).format(
+            categories=category_list,
+            messages=json.dumps(numbered_messages, ensure_ascii=True)
+        )
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            temperature=0,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        content = response.choices[0].message.content
+        try:
+            data = json.loads(content)
+            prediction_rows = data["predictions"]
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("OpenAI response was not valid prediction JSON.") from exc
+
+        rows_by_id = {int(row["id"]): row.get("labels", {}) for row in prediction_rows}
+        return [
+            self._labels_to_row(rows_by_id.get(index, {}))
+            for index in range(len(messages))
+        ]
+
+    def _labels_to_row(self, labels):
+        return [
+            1 if labels.get(category) in [1, "1", True, "true", "True"] else 0
+            for category in self.category_names
+        ]
 
 
-    return pipeline
-    #return pipeline
-
-def save_model(model, model_filepath):
+def build_model(category_names):
     """
-    Save the trained model to a file using pickle.
-
-    Args:
-        model (object): Trained model object to be saved.
-        model_filepath (str): Filepath to save the model.
-
-    Returns:
-        None
+    Build an OpenAI API classifier with the same fit/predict interface used by
+    evaluate_model().
     """
-    # Use pickle to dump the model object to the specified file
-    with open(model_filepath, 'wb') as file:
-        pickle.dump(model, file)
+    return OpenAIDisasterClassifier(category_names)
 
 ############################################################################
 
@@ -414,20 +476,18 @@ def main():
     
     """Train Classifier Main function
     
-        This function applies the Machine Learning Pipeline:
+        This function applies the OpenAI classification pipeline:
         1) Extract data from SQLite db
-        2) Train ML model on training set
-        3) Estimate model performance on test set
-        4) Save trained model as Pickle"""
+        2) Create an OpenAI-backed classifier
+        3) Estimate model performance on test set"""
        
     
-    if len(sys.argv) == 3:
+    if len(sys.argv) in [2, 3]:
         
         #progrmatically pass filepaths if desired
         #database_filepath = 'data/DisasterResponse.db' 
-        #model_filepath = 'models/classifier.pkl'
         
-        database_filepath, model_filepath = sys.argv[1:]
+        database_filepath = sys.argv[1]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         
         # Load data from the specified database file
@@ -438,26 +498,21 @@ def main():
 
         print('Building model...')
         # Build the model
-        model = build_model()
+        model = build_model(category_names)
 
-        print('Training model...')
-        # Train the model using the training data
+        print('Preparing OpenAI classifier...')
+        # Match the sklearn call pattern; no local training happens here.
         model.fit(X_train, Y_train)
 
         print('Evaluating model...')
         # Evaluate the trained model on the test set
         evaluate_model(model, X_test, Y_test, category_names)
 
-        print('Saving model...\n    MODEL: {}'.format(model_filepath))
-        # Save the trained model to the specified file path
-        save_model(model, model_filepath)
-
-        print('Trained model saved.')
+        print('OpenAI evaluation complete. No model file was saved.')
     else:
         print('Please provide the filepath of the disaster messages database '\
-              'as the first argument and the filepath of the pickle file to '\
-              'save the model to as the second argument. \n\nExample: python '\
-              'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
+              'as the first argument. \n\nExample: python '\
+              'train_classifier_LLM.py ../data/DisasterResponse.db')
 
 
 if __name__ == '__main__':
