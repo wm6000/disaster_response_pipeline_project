@@ -61,6 +61,20 @@ Data includes 2 csv files:
 #### Run Command
 `python models/train_classifier.py data/DisasterResponse.db data/classifier.pkl`
 
+### Running LLM  Script
+#### train_classifier_LLM.py | LLM work-flow:
+
+- Loads data from the SQLite database
+- Splits the dataset into training and test sets to manintain similar sample size
+- Uses the OpenAI API to classify messages in the test set
+- Prompts the model to return structured JSON predictions for all disaster-response categories
+- Compares the LLM predictions against the labeled test data
+- Outputs results on the test set
+
+#### Run Command
+`python models/train_classifier_LLM.py data/DisasterResponse.db`
+
+
 <a name="running-the-web-app"></a>
 ### Running the Web App
 #### Run Command
@@ -73,6 +87,12 @@ Go to http://0.0.0.0:3001/
 ### NLP:
 
 ![Intro Pic](Results.png)
+
+### LLM:
+
+![Intro Pic](Results_LLM.png)
+
+
 
 ### Website:
 
